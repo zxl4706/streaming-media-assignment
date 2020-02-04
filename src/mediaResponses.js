@@ -1,18 +1,14 @@
 const fs = require('fs');
 const path = require('path');
 
-const getStream = (filePath, responseHeader, startByte, endByte) => {
-  const stream = fs.createReadStream(filePath, { startByte, endByte });
-
+const turnStream = (response, stream) => {
   stream.on('open', () => {
-    stream.pipe(responseHeader);
+    stream.pipe(response);
   });
 
   stream.on('error', (streamErr) => {
     stream.end(streamErr);
   });
-
-  return stream;
 };
 
 const writeHeader = (inputResponse, inputMediaType, start, end, total) => {
@@ -51,9 +47,12 @@ const loadFile = (request, response, filePath, mediaType) => {
     if (start > end) {
       start = end - 1;
     }
+	
+	writeHeader(response, mediaType, start, end, total);
 
-    writeHeader(response, mediaType, start, end, total);
-    return getStream(file, response, start, end);
+	const stream = fs.createReadStream(file, { start, end });
+	turnStream(response, stream);
+    return stream
   });
 };
 
